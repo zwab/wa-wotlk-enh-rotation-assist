@@ -1,6 +1,6 @@
 function (event, unit, subevent, spellid)
     local time = GetTime()
-    local gcd = (select(4, GetSpellInfo(8004))) / 1000
+    local gcd = (select(4, GetSpellInfo(34914))) / 1000
     
     
     local function setsuggestionandicon(spell_name)
