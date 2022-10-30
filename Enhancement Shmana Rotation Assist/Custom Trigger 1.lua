@@ -197,7 +197,7 @@ function (event, unit, subevent, spellid)
         end
 
         -- Check 1 GCD ahead to see if it would be empty, if yes do fire nova
-        if secondgcdqueue[1] == nil then
+        if gcdqueue[2] == nil and secondgcdqueue[1] == nil then
             if cooldowntableraw[3].cd > gcd then
                 if cooldowntableraw[4].cd <= gcd then
                     gcdqueue[1] = cooldowntableraw[4].id
