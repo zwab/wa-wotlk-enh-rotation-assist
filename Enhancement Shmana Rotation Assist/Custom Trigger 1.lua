@@ -67,6 +67,12 @@ function (event, unit, subevent, spellid)
     if unit == "player" and event == "UNIT_SPELLCAST_SUCCEEDED" and aura_env.spelltrigger[spellid] then
         aura_env.suggestion, aura_env.icon = "", ""
         aura_env.spell = GetSpellInfo(spellid)
+
+    if aura_env.spell == "Stormstrike" or aura_env.spell == "Lava Lash" then
+        gcd = 1.5
+    elseif aura_env.spell == "Magma Totem" or aura_env.spell == "Call of the Elements" or aura_env.spell == "Call of the Ancestors" or aura_env.spell == "Call of the Spirits" or aura_env.spell == "Totemic Recall" then
+        gcd = 1
+    end
         
         
         -- Check if Flame Shock is on enemy
