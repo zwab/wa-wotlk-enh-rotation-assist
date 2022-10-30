@@ -175,44 +175,40 @@ function (event, unit, subevent, spellid)
 
         -- Populate table for Abilities available within the GCD AFTER the next GCD
         for i, v in pairs(cooldowntableraw) do
-            if v.id == "Flame Shock" and v.cd <= gcd * 2 then
+            if v.id == "Flame Shock" and v.cd <= (gcd * 2) then
                 if not checkdot() then
                     table.insert(secondgcdqueue, v.id)
                 else
                     table.insert(secondgcdqueue, "Earth Shock")
                 end
             end
-            if v.id == "Stormstrike" and v.cd <= gcd * 2 then
+            if v.id == "Stormstrike" and v.cd > gcd and v.cd <= (gcd * 2) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Magma Totem" and v.cd <= gcd * 2 then
+            if v.id == "Magma Totem" and v.cd > gcd  and v.cd <= (gcd * 2) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Fire Nova" and v.cd <= gcd * 2 then
+            if v.id == "Fire Nova" and v.cd > gcd  and v.cd <= (gcd * 2) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Lava Lash" and v.cd <= gcd * 2 then
+            if v.id == "Lava Lash" and v.cd > gcd  and v.cd <= (gcd * 2) then
                 table.insert(secondgcdqueue, v.id)
             end
         end
 
         -- Check 1 GCD ahead to see if it would be empty, if yes do fire nova
         if secondgcdqueue[1] == nil then
-            print("The GCD after next is blank!")
-            if cooldowntableraw[3].cd <= gcd then
-                print("Fire totem is still up the GCD after next!")
+            if cooldowntableraw[3].cd > gcd then
                 if cooldowntableraw[4].cd <= gcd then
                     gcdqueue[1] = cooldowntableraw[4].id
-                    print("We saved a GCD by adding an extra fire nova!")
                 end
             end
         end
 
         -- Defer Lava Lash if Stormstrike is coming off CD
         if gcdqueue[1] == cooldowntableraw[5].id then
-            if cooldowntableraw[2].cd < cooldowntableraw[5].cd + 0.3 then
+            if cooldowntableraw[2].cd <= cooldowntableraw[5].cd + 0.3 then
                 gcdqueue[1] = cooldowntableraw[2].id
-                print("We deferred Lava Lash!")
             end
         end
 
