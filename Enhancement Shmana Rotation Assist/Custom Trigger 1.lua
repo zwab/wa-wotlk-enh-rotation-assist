@@ -1,7 +1,9 @@
 function (event, unit, subevent, spellid)
     local time = GetTime()
     local gcd = (select(4, GetSpellInfo(34914))) / 1000
-    
+    local gcdqueue = {}
+    local secondgcdqueue = {}
+    local cooldowntableraw = {}
     
     local function setsuggestionandicon(spell_name)
         aura_env.suggestion = spell_name
@@ -10,22 +12,20 @@ function (event, unit, subevent, spellid)
         else
             aura_env.icon = select(3, GetSpellInfo(aura_env.suggestion))
         end
-        return true
     end
     
-    -- Check if spell is on CD
-    local function checkcd(expiration)
+    -- Return expiration
+    local function getexpiration(expiration)
         if expiration == nil or expiration == 0 then
-            return true
+            expiration = 0
+            return expiration
         else
             expiration = expiration - time
-            if expiration <= gcd then
-                return true
-            end
+            return expiration
         end
     end
-    
-    -- Maelstrom Spender Logic --
+
+    -- Get Maelstrom Stacks --
     if unit == "player" and event == "UNIT_AURA" then
         
         -- How much Maelstrom we got?
@@ -38,31 +38,30 @@ function (event, unit, subevent, spellid)
             end
         end
         
-        -- Calculate CD info of Chain Lightning
-        local chaincd, chainstart, chainduration
-        chainstart, chainduration = GetSpellCooldown("Chain Lightning")
-        if (chainduration == 6) then
-            chaincd = chainstart + chainduration
-        else
-            chaincd = chainstart + gcd
-        end
-        
-        -- Decide if & how to spend Maelstrom
+       -- Calculate CD info of Chain Lightning
+       local chaincd, chainstart, chainduration
+       chainstart, chainduration = GetSpellCooldown("Chain Lightning")
+       if (chainduration == 6) then
+           chaincd = chainstart + chainduration
+       elseif aura_env.spell == "Chain Lightning" then
+           chaincd = time + 6
+       else
+           chaincd = chainstart + gcd
+       end
+
         if getmaelstromstacks() == 5 then
-            if not aura_env.maelstromspenders[aura_env.spell] then
-                if checkcd(chaincd) then
-                    if setsuggestionandicon("Chain Lightning") then
-                        return true
-                    end
-                else
-                    if setsuggestionandicon("Lightning Bolt") then
-                        return true
-                    end
-                end
+            if getexpiration(chaincd) <= gcd then
+                gcdqueue[1] = "Chain Lightning"
+                setsuggestionandicon(gcdqueue[1])
+                return true
+            else
+                gcdqueue[1] = "Lightning Bolt"
+                setsuggestionandicon(gcdqueue[1])
+                return true
             end
         end
-        
     end
+
     
     -- Non-maelstrom Logic --
     if unit == "player" and event == "UNIT_SPELLCAST_SUCCEEDED" and aura_env.spelltrigger[spellid] then
@@ -129,45 +128,96 @@ function (event, unit, subevent, spellid)
         end
 
         
-        -- Determine what is coming up within the next GCD
-        local shockgcd = checkcd(shockcd)
-        local stormgcd = checkcd(stormcd)
-        local firetotemgcd = firetotemcd <= 1
-        local novagcd = checkcd(novacd)
-        local lashgcd = checkcd(lashcd)
+        -- Determine the Remaining Cooldown of all rotational abilities
+        local shockexpire = getexpiration(shockcd)
+        local stormexpire = getexpiration(stormcd)
+        local firetotemexpire = GetTotemTimeLeft(1)
+        local novaexpire = getexpiration(novacd)
+        local lashexpire = getexpiration(lashcd)
+        local chainexpire = getexpiration(chaincd)
 
-        -- Suggest Action for next GCD
-        if shockgcd then
-            if not checkdot() then
-                if setsuggestionandicon("Flame Shock") then
-                    return true
+        -- Populate Table of Abilities + Cooldown remaining
+        table.insert(cooldowntableraw, {id = "Flame Shock", cd = shockexpire})
+        table.insert(cooldowntableraw, {id = "Stormstrike", cd = stormexpire})
+        table.insert(cooldowntableraw, {id = "Magma Totem", cd = firetotemexpire})
+        table.insert(cooldowntableraw, {id = "Fire Nova", cd = novaexpire})
+        table.insert(cooldowntableraw, {id = "Lava Lash", cd = lashexpire})
+        table.insert(cooldowntableraw, {id = "Chain Lightning", cd = chainexpire})
+
+        -- Populate table for Abilities available within the next GCD
+        for i, v in pairs(cooldowntableraw) do
+            if v.id == "Flame Shock" and v.cd <= gcd then
+                if not checkdot() then
+                    table.insert(gcdqueue, v.id)
+                else
+                    table.insert(gcdqueue, "Earth Shock")
                 end
-            else
-                if setsuggestionandicon("Earth Shock") then
-                    return true
+            end
+            if v.id == "Stormstrike" and v.cd <= gcd then
+                table.insert(gcdqueue, v.id)
+            end
+            if v.id == "Magma Totem" and v.cd <= gcd then
+                table.insert(gcdqueue, v.id)
+            end
+            if v.id == "Fire Nova" and v.cd <= gcd then
+                table.insert(gcdqueue, v.id)
+            end
+            if v.id == "Lava Lash" and v.cd <= gcd then
+                table.insert(gcdqueue, v.id)
+            end
+        end
+
+        -- Populate table for Abilities available within the GCD AFTER the next GCD
+        for i, v in pairs(cooldowntableraw) do
+            if v.id == "Flame Shock" and v.cd <= gcd * 2 then
+                if not checkdot() then
+                    table.insert(secondgcdqueue, v.id)
+                else
+                    table.insert(secondgcdqueue, "Earth Shock")
                 end
             end
-        elseif stormgcd then
-            if setsuggestionandicon("Stormstrike") then
-                return true
+            if v.id == "Stormstrike" and v.cd <= gcd * 2 then
+                table.insert(secondgcdqueue, v.id)
             end
-        elseif firetotemgcd then
-            if setsuggestionandicon("Magma Totem") then
-                return true
+            if v.id == "Magma Totem" and v.cd <= gcd * 2 then
+                table.insert(secondgcdqueue, v.id)
             end
-        elseif novagcd then
-            if setsuggestionandicon("Fire Nova") then
-                return true
+            if v.id == "Fire Nova" and v.cd <= gcd * 2 then
+                table.insert(secondgcdqueue, v.id)
             end
-        elseif lashgcd then
-            if setsuggestionandicon("Lava Lash") then
-                return true
+            if v.id == "Lava Lash" and v.cd <= gcd * 2 then
+                table.insert(secondgcdqueue, v.id)
             end
-        else
-            if setsuggestionandicon("Free GCD LOL") then
-                return true
+        end
+
+        -- Check 1 GCD ahead to see if it would be empty, if yes do fire nova
+        if secondgcdqueue[1] == nil then
+            print("The GCD after next is blank!")
+            if cooldowntableraw[3].cd <= gcd then
+                print("Fire totem is still up the GCD after next!")
+                if cooldowntableraw[4].cd <= gcd then
+                    gcdqueue[1] = cooldowntableraw[4].id
+                    print("We saved a GCD by adding an extra fire nova!")
+                end
             end
-        end    
+        end
+
+        -- Defer Lava Lash if Stormstrike is coming off CD
+        if gcdqueue[1] == cooldowntableraw[5].id then
+            if cooldowntableraw[2].cd < cooldowntableraw[5].cd + 0.3 then
+                gcdqueue[1] = cooldowntableraw[2].id
+                print("We deferred Lava Lash!")
+            end
+        end
+
+        -- If the current CD is somehow empty, tell the user
+        if gcdqueue[1] == nil then
+            gcdqueue[1] = "Free GCD LOL"
+        end
+        
+        setsuggestionandicon(gcdqueue[1])
+        return true
+   
     end
 end
 
