@@ -200,7 +200,6 @@ function (event, unit, subevent, spellid)
         if gcdqueue[1] ~= cooldowntableraw[4].id and gcdqueue[3] == nil and secondgcdqueue[1] == nil then
             if cooldowntableraw[3].cd > gcd then
                 if cooldowntableraw[4].cd <= gcd then
-                    print(gcdqueue[1] .. " was next, replacing with Fire Nova")
                     gcdqueue[1] = cooldowntableraw[4].id
                 end
             end
