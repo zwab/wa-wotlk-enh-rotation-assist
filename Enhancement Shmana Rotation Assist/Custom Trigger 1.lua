@@ -175,23 +175,23 @@ function (event, unit, subevent, spellid)
         
         -- Populate table for Abilities available within the GCD AFTER the next GCD
         for i, v in pairs(cooldowntableraw) do
-            if v.id == "Flame Shock" and v.cd > (gcd * 2) and v.cd < (gcd * 3) then
+            if v.id == "Flame Shock" and v.cd > gcd and v.cd < (gcd * 3) then
                 if not checkdot() then
                     table.insert(secondgcdqueue, v.id)
                 else
                     table.insert(secondgcdqueue, "Earth Shock")
                 end
             end
-            if v.id == "Stormstrike" and v.cd > (gcd * 2) and v.cd < (gcd * 3) then
+            if v.id == "Stormstrike" and v.cd > gcd and v.cd < (gcd * 3) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Magma Totem" and v.cd > (gcd * 2)  and v.cd < (gcd * 3) then
+            if v.id == "Magma Totem" and v.cd > gcd and v.cd < (gcd * 3) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Fire Nova" and v.cd > (gcd * 2)  and v.cd < (gcd * 3) then
+            if v.id == "Fire Nova" and v.cd > gcd and v.cd < (gcd * 3) then
                 table.insert(secondgcdqueue, v.id)
             end
-            if v.id == "Lava Lash" and v.cd > (gcd * 2)  and v.cd < (gcd * 3) then
+            if v.id == "Lava Lash" and v.cd > gcd and v.cd < (gcd * 3) then
                 table.insert(secondgcdqueue, v.id)
             end
         end
@@ -200,10 +200,12 @@ function (event, unit, subevent, spellid)
         if gcdqueue[1] ~= cooldowntableraw[4].id and gcdqueue[3] == nil and secondgcdqueue[1] == nil then
             if cooldowntableraw[3].cd > gcd then
                 if cooldowntableraw[4].cd <= gcd then
+                    print(gcdqueue[1] .. " was next, replacing with Fire Nova")
                     gcdqueue[1] = cooldowntableraw[4].id
                 end
             end
         end
+        
         
         -- Defer Lava Lash if Stormstrike is coming off CD
         if gcdqueue[1] == cooldowntableraw[5].id then
