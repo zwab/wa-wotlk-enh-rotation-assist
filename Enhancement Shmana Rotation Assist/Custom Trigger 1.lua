@@ -143,8 +143,8 @@ function (event, unit, subevent, spellid)
         local chainexpire = getexpiration(chaincd)
         
         -- Populate Table of Abilities + Cooldown remaining
-        table.insert(cooldowntableraw, {id = "Flame Shock", cd = shockexpire})
         table.insert(cooldowntableraw, {id = "Stormstrike", cd = stormexpire})
+        table.insert(cooldowntableraw, {id = "Flame Shock", cd = shockexpire})
         table.insert(cooldowntableraw, {id = "Magma Totem", cd = firetotemexpire})
         table.insert(cooldowntableraw, {id = "Fire Nova", cd = novaexpire})
         table.insert(cooldowntableraw, {id = "Lava Lash", cd = lashexpire})
@@ -175,6 +175,10 @@ function (event, unit, subevent, spellid)
         
         -- Populate table for Abilities available within the GCD AFTER the next GCD
         for i, v in pairs(cooldowntableraw) do
+            if v.id == "Stormstrike" and v.cd > gcd and v.cd < (gcd * 3) then
+                table.insert(secondgcdqueue, v.id)
+            end
+            
             if v.id == "Flame Shock" and v.cd > gcd and v.cd < (gcd * 3) then
                 if not checkdot() then
                     table.insert(secondgcdqueue, v.id)
@@ -182,9 +186,7 @@ function (event, unit, subevent, spellid)
                     table.insert(secondgcdqueue, "Earth Shock")
                 end
             end
-            if v.id == "Stormstrike" and v.cd > gcd and v.cd < (gcd * 3) then
-                table.insert(secondgcdqueue, v.id)
-            end
+            
             if v.id == "Magma Totem" and v.cd > gcd and v.cd < (gcd * 3) then
                 table.insert(secondgcdqueue, v.id)
             end
